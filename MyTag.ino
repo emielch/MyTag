@@ -3,6 +3,9 @@
 #include <Colore.h>
 #include <FastLED.h>
 #include <DFMiniMp3.h>
+#include <RTCZero.h>
+
+RTCZero rtc;
 
 #define LED_PIN 12
 #define LED_AM 36
@@ -11,7 +14,6 @@
 Beam beams[BEAM_AM];
 
 CRGB leds[LED_AM];
-//Adafruit_NeoPixel leds = Adafruit_NeoPixel(LED_AM, PIN, NEO_GRB + NEO_KHZ800);
 
 Segment seg[] = {
 	Segment(0,35),  // 12
@@ -29,7 +31,7 @@ Segment seg[] = {
 	Segment(30,32),  // 10
 	Segment(33,35)  // 11
 };
-int inputPins[] = { 10,8,9,2,7,1,3,4,0,5,6,11 };
+int inputPins[] = { 10,8,9,2,7,1,3,4,0,5,6,11 };   // will have to use PIN_A1 etc
 
 byte segAm = sizeof(seg) / sizeof(Segment);
 Colore colore(LED_AM, seg, segAm, beams, BEAM_AM, &set_ledLib, &get_ledLib, &show_ledLib, &reset_ledLib);
@@ -41,6 +43,8 @@ DFMiniMp3<HardwareSerial, Mp3Notify> mp3(Serial1);
 
 void setup() {
 	Serial.begin(9600);
+	Serial1.begin(115200);
+	rtc.begin(); // initialize RTC
 
 	LEDS.addLeds<WS2812, LED_PIN, GRB>(leds, LED_AM);
 	LEDS.setBrightness(100);
@@ -71,13 +75,39 @@ void setup() {
 	seg[1].setFadeInOut(Color(255, 255, 255, RGB_MODE), Color(0, 0, 0, RGB_MODE), 0.8, 0.3);
 }
 
+
+unsigned long lastPrint = 0;
+
 void loop() {
+	checkSerial();
 	checkSnooze();
 	for (int i = 0; i < numberOfSlots; i++) {
 		slot[i].update();
 	}
 	colore.update();
-	//printFramerate();
+
+	if (millis() > lastPrint+1000) {
+		lastPrint = millis();
+		//printFramerate();
+
+		// Print date...
+		Serial.print(rtc.getDay());
+		Serial.print("/");
+		Serial.print(rtc.getMonth());
+		Serial.print("/");
+		Serial.print(rtc.getYear());
+		Serial.print("\t");
+
+		// ...and time
+		Serial.print(rtc.getHours());
+		Serial.print(":");
+		Serial.print(rtc.getMinutes());
+		Serial.print(":");
+		Serial.print(rtc.getSeconds());
+
+		Serial.println();
+		sendTagData();
+	}
 }
 
 bool touching = false;
@@ -123,12 +153,10 @@ void printFramerate() {
 /* ---- Library Interface Functions ---- */
 
 void set_ledLib(int pixel, byte r, byte g, byte b) {
-	//leds.setPixelColor(pixel, r, g, b);
 	leds[pixel] = CRGB(r, g, b);
 }
 
 void show_ledLib() {
-	//leds.show();
 	FastLED.show();
 }
 

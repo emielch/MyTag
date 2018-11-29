@@ -12,6 +12,8 @@
 #include <Colore.h>
 #include "Mp3Notify.h"
 #include <DFMiniMp3.h>
+#include <RTCZero.h>
+extern RTCZero rtc;
 
 
 class TagSlot
@@ -22,19 +24,69 @@ protected:
 	bool currSwitch;
 	int id;
 	Color color;
-	unsigned long alarmTime = 0;
+	int audioSample = 1; // audio sample to be played when alarming, 0 for no audio
+	bool isTimer = true;;  // true for timer, false for moment
+	unsigned long savedTime; // the time it will countdown from or alarm at
+	
+
+	bool countingDown = false;
 	bool alarming = false;
-	int countdownTime = 15;
+
+	void slotRemoved();
+	void slotReturned();
 
 public:
 	void init(int _id, int _switchPin, Color _col, Segment * _ledSegment);
 	void update();
+
+	unsigned long startCountTime;  // the time the countdown started
+	unsigned long alarmTime;  // the time the alarm will go off at
+
+	void setIsTimer(bool val) { isTimer = val; }
+	void setSavedTime(unsigned long val) { savedTime = val; }
+	void setColor(Color _col) { color = _col; }
+	void setAudio(int val) { audioSample = val; }
+
+
 	unsigned long getAlarmTime() { return alarmTime; }
 	void setTimeFac(float fac);
 	bool isAlarming() { return alarming; }
-	void setColor(Color _col) { color = _col; }
-};
 
+	static int getHours(unsigned long val) {
+		return val / 60 / 60 - (val/60/60/24*24);
+	}
+	static int getMinutes(unsigned long val) {
+		return val / 60 - (val / 60 / 60 * 60);
+	}
+	static int getSeconds(unsigned long val) {
+		return val - (val / 60 * 60);
+	}
+
+	String getDataString() {
+		String str = "";
+		str += id;
+		str += ",";
+		str += color.red();
+		str += ",";
+		str += color.green();;
+		str += ",";
+		str += color.green();
+		str += ",";
+		str += isTimer;
+		str += ",";
+		str += savedTime;
+		str += ",";
+		str += audioSample;
+		str += ",";
+		str += currSwitch;
+		str += ",";
+		str += alarmTime;
+		str += ",";
+		str += audioSample;
+		return str;
+	}
+	
+};
 
 #endif
 
