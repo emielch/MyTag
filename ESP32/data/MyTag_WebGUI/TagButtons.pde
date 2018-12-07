@@ -24,6 +24,7 @@ class Slider {
     rect(pos.x-2, pos.y-2, size.x+4, size.y+5);
 
     colorMode(HSB, size.x, size.x, size.x);
+    strokeWeight(1);
 
     for (int i=(int)pos.x; i<int(pos.x+size.x); i++) {
       float j = i-pos.x;
