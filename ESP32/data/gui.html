@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>MyTag WebGUI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<style>
+* {
+	margin: 0;
+	padding: 0;
+}
+
+body, html {
+	height:100%;
+	background-color: rgb(0,0,0);
+}
+
+#GUI {
+    position:absolute;
+	width: 100% !important;
+	height: 100% !important;
+	margin: 0;
+	padding: 0;
+}
+</style>
+<script src="processing.min.js"></script>
+</head>
+<body>
+
+
+<!-- <script type="text/processing" data-processing-target="GUI"> -->
+
+
+
+<!-- </script> -->
+<!-- <canvas id="GUI"> </canvas> -->
+
+<canvas id="GUI" data-processing-sources="MyTag_WebGUI/MyTag_WebGUI.pde MyTag_WebGUI/TagBlock.pde MyTag_WebGUI/Blocks.pde MyTag_WebGUI/TagButtons.pde MyTag_WebGUI/TimeSelector.pde"></canvas>
+
+<script type="text/javascript">
+var pjs;
+
+bindJavascript();
+
+function bindJavascript() {
+	pjs = Processing.getInstanceById('GUI');
+	if(pjs!=null) {
+		if(typeof pjs.bindJavascript != "undefined"){
+			pjs.bindJavascript(this);
+			updateWindowSize();
+			requestData();
+			syncTime();
+		}else{
+			setTimeout(bindJavascript, 100);
+		}
+	}else{
+		setTimeout(bindJavascript, 100);
+	}
+}
+
+window.onresize = updateWindowSize;
+
+function updateWindowSize(){
+	pjs.scaleWindow(window.innerWidth,window.innerHeight,window.devicePixelRatio);
+}
+
+function print(data){
+	console.log(data);
+}
+
+function setBlock(ID,r,g,b,isTimer,time,audio){
+	const url='/set?send=1,' + ID + ',' + r + ',' + g + ',' + b + ',' + isTimer + ',' + time + ',' + audio;
+	sendData(url);
+}
+
+function syncTime(){
+	var d = new Date();
+	var timeStamp = Math.floor(Date.now() / 1000) - d.getTimezoneOffset() * 60;
+	
+	const url='/set?send=2,' + timeStamp;
+	sendData(url);
+}
+
+function sendData(url){
+	console.log(url);
+	const Http = new XMLHttpRequest();
+	Http.open("GET", url);
+	Http.send();
+	Http.onreadystatechange=(e)=>{
+		var response = Http.responseText;
+		console.log(response);
+	}
+}
+
+function requestData(){
+	const Http = new XMLHttpRequest();
+	const url='/getData';
+	console.log(url);
+	Http.open("GET", url);
+	Http.send();
+	Http.onreadystatechange=(e)=>{
+		var response = Http.responseText;
+		console.log(response);
+		var obj = JSON.parse(response);
+		for (i in obj) {
+			pjs.setBlock(obj[i].ID,obj[i].r,obj[i].g,obj[i].b,obj[i].isTimer,obj[i].savedTime);
+		}
+	}
+}
+
+
+var obj = document.getElementById('GUI');
+
+obj.addEventListener('touchstart', function(event) {
+	pjs.setMultitouch();
+	for(var i=0; i<event.changedTouches.length ; i++){
+		var touch = event.changedTouches[i]
+		pjs.startTouch(touch.identifier, touch.pageX, touch.pageY);
+	}
+}, false);
+
+obj.addEventListener('touchmove', function(event) {
+  for(var i=0; i<event.changedTouches.length ; i++){
+		var touch = event.changedTouches[i]
+		pjs.moveTouch(touch.identifier, touch.pageX, touch.pageY);
+	}
+}, false);
+
+obj.addEventListener('touchend', function(event) {
+  for(var i=0; i<event.changedTouches.length ; i++){
+		var touch = event.changedTouches[i]
+		pjs.endTouch(touch.identifier, touch.pageX, touch.pageY);
+	}
+}, false);
+
+</script>
+</body>
+</html>

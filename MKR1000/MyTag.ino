@@ -4,6 +4,17 @@
 #include <FastLED.h>
 #include <DFMiniMp3.h>
 #include <RTCZero.h>
+#include <Arduino.h> 
+#include <wiring_private.h>
+
+// Serial2 pin and pad definitions (in Arduino files Variant.h & Variant.cpp)
+#define PIN_SERIAL2_RX       (1ul)                // Pin description number for PIO_SERCOM on D1
+#define PIN_SERIAL2_TX       (0ul)                // Pin description number for PIO_SERCOM on D0
+#define PAD_SERIAL2_TX       (UART_TX_PAD_0)      // SERCOM pad 0 TX
+#define PAD_SERIAL2_RX       (SERCOM_RX_PAD_1)    // SERCOM pad 1 RX
+
+// Instantiate the Serial2 class
+Uart Serial2(&sercom3, PIN_SERIAL2_RX, PIN_SERIAL2_TX, PAD_SERIAL2_RX, PAD_SERIAL2_TX);
 
 RTCZero rtc;
 
@@ -31,7 +42,7 @@ Segment seg[] = {
 	Segment(30,32),  // 10
 	Segment(33,35)  // 11
 };
-int inputPins[] = { 10,8,9,2,7,1,3,4,0,5,6,11 };   // will have to use PIN_A1 etc
+int inputPins[] = { 10,8,9,2,7,A5,3,4,A4,5,6,11 };   // will have to use PIN_A1 etc
 
 byte segAm = sizeof(seg) / sizeof(Segment);
 Colore colore(LED_AM, seg, segAm, beams, BEAM_AM, &set_ledLib, &get_ledLib, &show_ledLib, &reset_ledLib);
@@ -40,10 +51,19 @@ Colore colore(LED_AM, seg, segAm, beams, BEAM_AM, &set_ledLib, &get_ledLib, &sho
 TagSlot slot[numberOfSlots];
 
 DFMiniMp3<HardwareSerial, Mp3Notify> mp3(Serial1);
+int serialInterruptPin = A3;
+
+unsigned int currTime;
 
 void setup() {
-	Serial.begin(9600);
+	Serial.begin(115200);
 	Serial1.begin(115200);
+
+	Serial2.begin(115200);          // Begin Serial2 
+	pinPeripheral(0, PIO_SERCOM);   // Assign pins 0 & 1 SERCOM functionality
+	pinPeripheral(1, PIO_SERCOM);
+	pinMode(serialInterruptPin, INPUT);
+
 	rtc.begin(); // initialize RTC
 
 	LEDS.addLeds<WS2812, LED_PIN, GRB>(leds, LED_AM);
@@ -67,7 +87,7 @@ void setup() {
 	slot[11].setColor(Color(255, 0, 255, RGB_MODE));
 
 	mp3.begin();
-	mp3.setVolume(100);
+	mp3.setVolume(15);
 	mp3.playMp3FolderTrack(1);
 	mp3.loop();
 	seg[1].setBlendMode(MULTIPLY);
@@ -79,6 +99,7 @@ void setup() {
 unsigned long lastPrint = 0;
 
 void loop() {
+	currTime = rtc.getEpoch();
 	checkSerial();
 	checkSnooze();
 	for (int i = 0; i < numberOfSlots; i++) {
@@ -90,22 +111,21 @@ void loop() {
 		lastPrint = millis();
 		//printFramerate();
 
-		// Print date...
-		Serial.print(rtc.getDay());
-		Serial.print("/");
-		Serial.print(rtc.getMonth());
-		Serial.print("/");
-		Serial.print(rtc.getYear());
-		Serial.print("\t");
+		//// Print date...
+		//Serial.print(rtc.getDay());
+		//Serial.print("/");
+		//Serial.print(rtc.getMonth());
+		//Serial.print("/");
+		//Serial.print(rtc.getYear());
+		//Serial.print("\t");
 
-		// ...and time
-		Serial.print(rtc.getHours());
-		Serial.print(":");
-		Serial.print(rtc.getMinutes());
-		Serial.print(":");
-		Serial.print(rtc.getSeconds());
+		//// ...and time
+		//Serial.print(rtc.getHours());
+		//Serial.print(":");
+		//Serial.print(rtc.getMinutes());
+		//Serial.print(":");
+		//Serial.println(rtc.getSeconds());
 
-		Serial.println();
 		sendTagData();
 	}
 }
@@ -157,6 +177,10 @@ void set_ledLib(int pixel, byte r, byte g, byte b) {
 }
 
 void show_ledLib() {
+	while (digitalRead(serialInterruptPin)) {
+		delay(1);
+	}
+	delay(10);
 	FastLED.show();
 }
 
@@ -169,4 +193,11 @@ void reset_ledLib() {
 Color get_ledLib(int i) {
 	Color pixelCol(leds[i].r, leds[i].g, leds[i].b, RGB_MODE);
 	return pixelCol;
+}
+
+
+
+void SERCOM3_Handler()    // Interrupt handler for SERCOM3
+{
+	Serial2.IrqHandler();
 }
