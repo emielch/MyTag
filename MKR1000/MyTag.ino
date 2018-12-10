@@ -146,7 +146,7 @@ void checkSnooze() {
 			snoozeSlot->setTimeFac(potFac);
 
 	}
-	else if (potVal < 20 && touching && millis() > lastPressTime + 200) {
+	else if (potVal < 20 && touching && millis() > lastPressTime + 2000) {
 		touching = false;
 	}
 }

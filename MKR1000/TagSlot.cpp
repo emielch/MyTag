@@ -78,11 +78,15 @@ void TagSlot::slotReturned() {
 
 void TagSlot::setTimeFac(float fac)
 {
-	Color newCol;
-	newCol.fade(color, Color(0, 0, 0, RGB_MODE), fac);
-	//ledSegment->setStaticColor(newCol);
-	//ledSegment->setFade(color, 1. / (countdownTime*(fac)));
-	//alarming = false;
+	unsigned int _time;
+	if (isTimer) _time = savedTime;
+	else _time = 10 * 60;
+
+	alarming = false;
+	countingDown = true;
+	startCountTime = rtc.getEpoch();
+
+	alarmTime = startCountTime + _time * fac;
 }
 
 
