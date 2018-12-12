@@ -84,9 +84,10 @@ void TagSlot::setTimeFac(float fac)
 
 	alarming = false;
 	countingDown = true;
-	startCountTime = rtc.getEpoch();
+	unsigned int skippedTime = _time * (1 - fac);
+	startCountTime = rtc.getEpoch() - skippedTime;
 
-	alarmTime = startCountTime + _time * fac;
+	alarmTime = startCountTime + _time;
 }
 
 

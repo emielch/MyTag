@@ -26,7 +26,7 @@ protected:
 	Color color;
 	int audioSample = 1; // audio sample to be played when alarming, 0 for no audio
 	bool isTimer = true;;  // true for timer, false for moment
-	unsigned long savedTime = 180; // the time it will countdown from or alarm at
+	unsigned long savedTime = 300; // the time it will countdown from or alarm at
 	
 
 	bool countingDown = false;
