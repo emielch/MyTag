@@ -2,7 +2,7 @@
 #include "TagSlot.h"
 #include <Colore.h>
 #include <FastLED.h>
-#include <DFMiniMp3.h>
+#include <DFMiniMp3.h>  // use version 1.0.1
 #include <RTCZero.h>
 #include <Arduino.h> 
 #include <wiring_private.h>
